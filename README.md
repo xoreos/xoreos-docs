@@ -21,3 +21,12 @@ official and as figured out by the modding community.
 * kotor\_mdl.html: Partial KotOR model specs
 * nds\_sdat.html: Partial Nintendo DS Nitro Composer File (\*.sdat)
   specs, by kiwi.ds
+
+templates
+---------
+
+This directory contains binary template files for [010
+Editor](http://www.sweetscape.com/010editor/). They describe the
+structure of binary files.
+
+* JadeMDL.bt: Jade Empire's MDL model file
