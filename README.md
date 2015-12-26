@@ -30,3 +30,4 @@ Editor](http://www.sweetscape.com/010editor/). They describe the
 structure of binary files.
 
 * JadeMDL.bt: Jade Empire's MDL model file
+* NWN1MDL.bt: Neverwinter Nights' MDL model file
