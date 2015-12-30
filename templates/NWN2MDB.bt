@@ -1,0 +1,519 @@
+//--------------------------------------
+//--- 010 Editor v6.0.2 Binary Template
+//
+// File: NWN2MDB.bt
+// Author: Enrico Horn (Farmboy0)
+// Revision: 0.9
+// Purpose: to map the model format of the NWN2 engine from bioware
+//------------------------------------------------------
+// Colors:
+//------------------------------------------------------
+//		Light Blue   : mdb header
+//		Light Purple : mdb keys
+
+//		0xA000A0     : reference packets (HOOK, HAIR, HELM)
+//		Gray         : rigd packet(mesh without animation)
+//		Orange       : skin packet(mesh with animation)
+//		0x8090FF     : walk packet(mesh with walking info)
+//		Dark Blue    : collision packets (COL2, COL3, COLS)
+
+//		Dark Red     : trwh packet(terrain width and height)
+//		Dark Green   : trrn packet(terrain)
+//		Dark Aqua    : watr packet(water)
+//		0x8090FF     : aswm packet(compressed walk mesh)
+//------------------------------------------------------
+
+//------------------------------------------------------
+// generic structures
+
+typedef struct {
+	float x;
+	float y;
+	float z;
+} vertex <read=ReadVertex>;
+
+typedef struct {
+	float u;
+	float v;
+	float w;
+} texcoord <read=ReadTexCoord>;
+
+typedef struct {
+	float r;
+	float g;
+	float b;
+} color <read=ReadColor>;
+
+typedef struct {
+	ubyte r;
+	ubyte g;
+	ubyte b;
+	ubyte a;
+} rgba <read=ReadRGBA>;
+
+typedef struct {
+	float w;
+	float x;
+	float y;
+	float z;
+} quaternion <read=ReadQuaternion>;
+
+typedef struct {
+	vertex v[3];
+} rot_matrix;
+
+typedef struct {
+	uint32 alpha_test : 1;		// 1
+	uint32 alpha_blend : 1;		// 2
+	uint32 add_blend : 1;		// 4
+	uint32 env_mapping: 1;		// 8
+	uint32 cutscene_mesh : 1;	// 10
+	uint32 glow_effect : 1;		// 20
+	uint32 no_shadow : 1;		// 40
+	uint32 proj_texture : 1;	// 80
+} material_flags;
+
+typedef struct {
+	char map_diffuse[32];
+	char map_normal[32];
+	char map_tint[32];
+	char map_glow[32];
+	color color_diffuse;
+	color color_specular;
+	float specular_power;
+	float specular_value;
+	material_flags flags;
+} material;
+
+typedef struct {
+	uint16 index_vertex[3];
+} face;
+
+typedef struct(int count) {
+	face f[count];
+} face_array;
+
+//------------------------------------------------------
+// generic header structure
+
+typedef struct {
+	char nwn2[4];
+	uint16 version_major;
+	uint16 version_minor;
+	uint32 count_packets;
+} header_mdb <bgcolor=cLtBlue>;
+
+typedef struct {
+	char signature[4];
+	uint32 p_packet <format=hex>;
+} packet_key <bgcolor=cLtPurple,fgcolor=cBlack,read=ReadPacketKey>;
+
+//------------------------------------------------------
+// mesh packet structures
+
+struct packet_mdb_mesh;
+
+typedef struct (packet_mdb_mesh &mesh) {
+	vertex position;
+	vertex normal;
+
+if (Strncmp(mesh.signature,"SKIN",4) == 0) {
+
+	float bone_weights[4];
+	byte bone_indexes[4];
+
+}
+if (Strncmp(mesh.signature,"RIGD",4) == 0 ||
+	Strncmp(mesh.signature,"SKIN",4) == 0) {
+
+	vertex tangent;
+	vertex binormal;
+
+}
+
+	texcoord uvw;
+
+if (Strncmp(mesh.signature,"SKIN",4) == 0) {
+
+	float bone_count;
+
+}
+
+} vertex_struct;
+
+typedef struct {
+	uint32 walkable : 1;	// 1
+	uint32 reserved : 2;	// 2,4
+	uint32 dirt: 1;			// 8
+	uint32 grass : 1;		// 10
+	uint32 stone : 1;		// 20
+	uint32 wood : 1;		// 40
+	uint32 carpet : 1;		// 80
+	uint32 metal : 1;		// 100
+	uint32 swamp : 1;		// 200
+	uint32 mud : 1;			// 400
+	uint32 leafes : 1;		// 800
+	uint32 water : 1;		// 1000
+	uint32 puddles : 1;		// 2000
+} face_WALK_flags;
+
+typedef struct {
+	uint16 index_vertex[3];
+	face_WALK_flags flags; 
+} face_WALK;
+
+typedef struct {
+	char signature[4];
+	uint32 size_packet;
+	char name[32];
+
+if (Strncmp(signature,"SKIN",4) == 0) {
+
+	char name_skeleton[32];
+
+}
+if (Strncmp(signature,"WALK",4) == 0) {
+
+	uint32 flags;
+
+} else {
+
+	material mat;
+
+}
+
+	uint32 count_verts;
+	uint32 count_faces;
+
+	vertex_struct v(this)[count_verts] <fgcolor=cYellow,optimize=false>;
+
+if (Strncmp(signature,"WALK",4) == 0) {
+
+	face_WALK f[count_faces] <fgcolor=cLtGreen,optimize=false>;
+
+} else {
+
+	face f[count_faces] <fgcolor=cLtGreen,optimize=false>;
+
+}
+
+} packet_mdb_mesh <fgcolor=cWhite,read=ReadMesh>;
+
+//------------------------------------------------------
+// sphere collision packet structures
+
+typedef struct {
+	uint32 bone_index;
+	float radius;
+} item_COLS;
+
+typedef struct {
+	char signature[4];
+	uint32 size_packet;
+	uint32 count_items;
+	item_COLS c[count_items] <fgcolor=cLtRed>;
+} packet_mdb_COLS <fgcolor=cWhite,bgcolor=cDkBlue>;
+
+//------------------------------------------------------
+// reference packet structures
+
+typedef struct {
+	uint16 type;
+	uint16 size;
+} packet_mdb_HOOK_flags;
+
+enum hair_shortening {
+	hair_low,
+	hair_short,
+	hair_ponytail
+};
+
+enum helm_hiding {
+	helm_hiding_none,
+	helm_hiding_hair,
+	helm_hiding_hair_partial,
+	helm_hiding_head
+};
+
+typedef struct {
+	char signature[4];
+	uint32 size_packet;
+	char name[32];
+
+if (Strncmp(signature,"HOOK",4) == 0) {
+
+	packet_mdb_HOOK_flags flags;
+
+} else if (Strncmp(signature,"HAIR",4) == 0) {
+
+	hair_shortening flags;
+
+} else if (Strncmp(signature,"HELM",4) == 0) {
+
+	helm_hiding flags;
+
+}
+
+	vertex position;
+	rot_matrix orientation;
+} packet_mdb_refs <fgcolor=cWhite,read=ReadRefs>;
+
+//------------------------------------------------------
+// terrain packet structures
+
+typedef struct {
+	char signature[4];
+	uint32 size_packet;
+	uint32 count_x;
+	uint32 count_y;
+	uint32 unknown;
+} packet_mdb_TRWH <fgcolor=cWhite>;
+
+//------------------------------------------------------
+
+typedef struct {
+	vertex position;
+	vertex normal;
+	rgba color_tint;
+	float xy_coord_0to10[2];
+	float xy_coord_0to1[2];
+} vertex_struct_TRRN;
+
+typedef struct(int count) {
+	vertex_struct_TRRN v[count];
+} vertex_array_TRRN;
+
+typedef struct {
+	vertex position;
+	vertex direction;
+	vertex dimension;
+} grass_blade;
+
+typedef struct(int count) {
+	grass_blade blade[count];
+} grass_blade_array;
+
+typedef struct {
+	char name[32];
+	char texture[32];
+	uint32 count_blades <fgcolor=cWhite>;;
+	grass_blade_array blades(count_blades);
+} grass_struct_TRRN;
+
+typedef struct {
+	char signature[4];
+	uint32 size_packet;
+	char name[128];
+	char texture1[32];
+	char texture2[32];
+	char texture3[32];
+	char texture4[32];
+	char texture5[32];
+	char texture6[32];
+	texcoord uvw[6];
+
+	uint32 count_verts;
+	uint32 count_faces;
+	vertex_array_TRRN vertexes(count_verts) <fgcolor=cYellow,optimize=false>;
+	face_array faces(count_faces) <fgcolor=cLtGreen,optimize=false>;
+
+	uint32 size_dds1 <fgcolor=cWhite>;
+if (size_dds1 > 0) {
+	byte dds1[size_dds1] <fgcolor=cLtBlue,optimize=false>;
+}
+
+	uint32 size_dds2 <fgcolor=cWhite>;
+if (size_dds2 > 0) {
+	byte dds2[size_dds2] <fgcolor=cLtRed,optimize=false>;
+}
+
+	uint32 size_grass;
+if (size_grass > 0) {
+	grass_struct_TRRN grass[size_grass] <fgcolor=cBlack,optimize=false>;
+}
+
+} packet_mdb_TRRN <fgcolor=cWhite,read=ReadTRRN>;
+
+//------------------------------------------------------
+
+typedef struct {
+	char name[32];
+	float dir_x;
+	float dir_y;
+	float rate;
+	float angle;
+} texture_WATR;
+
+typedef struct {
+	vertex position;
+	float xy_coord_0to5[2];
+	float xy_coord_0to1[2];
+} vertex_struct_WATR;
+
+typedef struct(int count) {
+	vertex_struct_WATR v[count];
+} vertex_array_WATR;
+
+typedef struct {
+	char signature[4];
+	uint32 size_packet;
+	char name[128];
+	color water_color;
+	float ripple_x;
+	float ripple_y;
+	float smoothness;
+	float ref_bias;
+	float ref_power;
+	float always180f;
+	float always05f;
+	texture_WATR textures[3];
+	float offset_x;
+	float offset_y;
+
+	uint32 count_verts;
+	uint32 count_faces;
+	vertex_array_WATR vertexes(count_verts) <fgcolor=cYellow,optimize=false>;
+	face_array faces(count_faces) <fgcolor=cLtGreen,optimize=false>;
+	uint32 water_flag[count_faces] <fgcolor=cLtRed>;
+
+	uint32 size_dds1 <fgcolor=cWhite>;
+if (size_dds1 > 0) {
+	byte dds1[size_dds1] <fgcolor=cLtBlue,optimize=false>;
+}
+
+	uint32 terrain_x <fgcolor=cWhite>;
+	uint32 terrain_y <fgcolor=cWhite>;
+} packet_mdb_WATR <fgcolor=cWhite,read=ReadWATR>;
+
+//------------------------------------------------------
+
+typedef struct {
+	char signature[4];
+	uint32 size_packet;
+	char compressed[4];
+	uint32 size_packed;
+	uint32 size_unpacked;
+	byte zip_data[size_packed];
+} packet_mdb_ASWM <fgcolor=cWhite>;
+
+
+//------------------------------------------------------
+// main definition
+
+LittleEndian();
+header_mdb header;
+packet_key keys[header.count_packets];
+
+local int p;
+for (p = 0; p < header.count_packets; p++) {
+	FSeek(keys[p].p_packet);
+
+	if (Strncmp(keys[p].signature,"RIGD",4) == 0) {
+		SetBackColor(cSilver);
+	} else if (Strncmp(keys[p].signature,"SKIN",4) == 0) {
+		SetBackColor(0x0090FF);
+	} else if (Strncmp(keys[p].signature,"WALK",4) == 0) {
+		SetBackColor(0x8090FF);
+	} else if (Strncmp(keys[p].signature,"COL2",4) == 0) {
+		SetBackColor(cDkBlue);
+	} else if (Strncmp(keys[p].signature,"COL3",4) == 0) {
+		SetBackColor(cDkBlue);
+	} else if (Strncmp(keys[p].signature,"COLS",4) == 0) {
+		SetBackColor(cDkBlue);
+	} else if (Strncmp(keys[p].signature,"HOOK",4) == 0) {
+		SetBackColor(0xA000A0);
+	} else if (Strncmp(keys[p].signature,"HAIR",4) == 0) {
+		SetBackColor(0xA000A0);
+	} else if (Strncmp(keys[p].signature,"HELM",4) == 0) {
+		SetBackColor(0xA000A0);
+	} else if (Strncmp(keys[p].signature,"TRWH",4) == 0) {
+		SetBackColor(cDkRed);
+	} else if (Strncmp(keys[p].signature,"TRRN",4) == 0) {
+		SetBackColor(cDkGreen);
+	} else if (Strncmp(keys[p].signature,"WATR",4) == 0) {
+		SetBackColor(cDkAqua);
+	} else if (Strncmp(keys[p].signature,"ASWM",4) == 0) {
+		SetBackColor(0x8090FF);
+	}
+
+	if (Strncmp(keys[p].signature,"COLS",4) == 0) {
+		packet_mdb_COLS COLS;
+	} else if (Strncmp(keys[p].signature,"HOOK",4) == 0 ||
+				Strncmp(keys[p].signature,"HAIR",4) == 0 ||
+				Strncmp(keys[p].signature,"HELM",4) == 0) {
+		packet_mdb_refs REFS;
+	} else if (Strncmp(keys[p].signature,"TRWH",4) == 0) {
+		packet_mdb_TRWH TRWH;
+	} else if (Strncmp(keys[p].signature,"TRRN",4) == 0) {
+		packet_mdb_TRRN TRRN;
+	} else if (Strncmp(keys[p].signature,"WATR",4) == 0) {
+		packet_mdb_WATR WATR;
+	} else if (Strncmp(keys[p].signature,"ASWM",4) == 0) {
+		packet_mdb_ASWM ASWM;
+	} else {
+		packet_mdb_mesh MESH;
+	}
+}
+
+//------------------------------------------------------
+// read Methods
+
+string ReadVertex( vertex &v ) {
+	local string s;
+	SPrintf(s, "x=%f,y=%f,z=%f", v.x, v.y, v.z);
+	return s;
+}
+
+string ReadTexCoord( texcoord &uvw ) {
+	local string s;
+	SPrintf(s, "u=%f,v=%f,w=%f", uvw.u, uvw.v, uvw.w);
+	return s;
+}
+
+string ReadColor( color &c ) {
+	local string s;
+	SPrintf(s, "r=%f,g=%f,b=%f", c.r, c.g, c.b);
+	return s;
+}
+
+string ReadRGBA( rgba &c ) {
+	local string s;
+	SPrintf(s, "r=%u,g=%u,b=%u,a=%u", c.r, c.g, c.b,c.a);
+	return s;
+}
+
+string ReadQuaternion( quaternion &q ) {
+	local string s;
+	SPrintf(s, "%f,%f,%f,%f", q.w, q.x, q.y, q.z);
+	return s;
+}
+
+string ReadPacketKey( packet_key &key ) {
+	local string s;
+	SPrintf(s, "%s(%Xh)", key.signature, key.p_packet);
+	return s;
+}
+
+string ReadMesh(packet_mdb_mesh &mesh) {
+	local string s;
+	SPrintf(s, "%s(%s, v=%u, f=%u)", mesh.name, mesh.signature, mesh.count_verts, mesh.count_faces);
+	return s;
+}
+
+string ReadRefs(packet_mdb_refs &refs) {
+	local string s;
+	SPrintf(s, "%s(%s)", refs.name, refs.signature);
+	return s;
+}
+
+string ReadTRRN(packet_mdb_TRRN &trrn) {
+	local string s;
+	SPrintf(s, "%s(%i)", trrn.name,trrn.size_grass);
+	return s;
+}
+
+string ReadWATR(packet_mdb_WATR &watr) {
+	local string s;
+	SPrintf(s, "%s", watr.name);
+	return s;
+}
