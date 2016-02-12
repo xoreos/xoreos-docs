@@ -1,0 +1,115 @@
+//--------------------------------------
+//--- 010 Editor v6.0.3 Binary Template
+//
+// File: NWNGR2.bt
+// Author: Enrico Horn (Farmboy0) based upon work by berenm
+// Revision: 0.1
+// Purpose: to map the granny2 file from NWN2
+//------------------------------------------------------
+// Colors:
+//------------------------------------------------------
+//		Light Blue   : gr2 header
+//		Light Purple : gr2 info
+//		Light Green  : gr2 section header
+//		Red          : relocation
+//		Blue         : marshallings
+//		Black        : data(possibly packed)
+//------------------------------------------------------
+
+typedef struct {
+	uint32 magic[4] <format=hex>;
+	uint32 size;
+	uint32 format;
+	uint32 reserved[2];
+} header <bgcolor=cLtBlue>;
+
+typedef struct {
+	uint32 version;
+	uint32 file_size;
+	uint32 crc32 <format=hex>;
+
+	uint32 sections_offset <format=hex>;
+	uint32 sections_count;
+
+	uint32 type_section;
+	uint32 type_offset <format=hex>;
+
+	uint32 root_section;
+	uint32 root_offset <format=hex>;
+
+	uint32 tag;
+	uint32 extra[4];
+} info <bgcolor=cLtPurple,fgcolor=cBlack>;
+
+typedef struct {
+	uint32 compression;
+
+	uint32 data_offset <format=hex>;
+	uint32 data_size;
+
+	uint32 decompressed_size;
+	uint32 alignment;
+
+	uint32 steps[2];
+
+	uint32 relocations_offset <format=hex>;
+	uint32 relocations_count;
+
+	uint32 marshallings_offset <format=hex>;
+	uint32 marshallings_count;
+} section <bgcolor=cLtGreen,fgcolor=cBlack>;
+
+typedef struct {
+	uint32 offset <format=hex>;
+	uint32 target_section;
+	uint32 target_offset <format=hex>;
+} relocation <bgcolor=cRed>;
+
+typedef struct {
+	uint32 count;
+	uint32 offset <format=hex>;
+	uint32 target_section;
+	uint32 target_offset <format=hex>;
+} marshalling <bgcolor=cBlue>;
+
+typedef struct (section &sec) {
+	local int r, m;
+
+	if (sec.relocations_count > 0) {
+		FSeek(sec.relocations_offset);
+		for (r = 0; r < sec.relocations_count; r++) {
+			relocation rel;
+		}
+	}
+
+	if (sec.marshallings_count > 0) {
+		FSeek(sec.marshallings_offset);
+		for (m = 0; m < sec.marshallings_count; m++) {
+			marshalling mar;
+		}
+	}
+
+	if (sec.data_size > 0) {
+		FSeek(sec.data_offset);
+		byte data[sec.data_size] <bgcolor=cBlack,fgcolor=cWhite>;
+	}
+
+} section_data;
+
+LittleEndian();
+header h;
+info i;
+
+local int s;
+for (s = 0; s < i.sections_count; s++) {
+	section sec;
+}
+for (s = 0; s < i.sections_count; s++) {
+	if (sec[s].relocations_count > 0 ||
+		sec[s].marshallings_count > 0 ||
+		sec[s].data_size > 0) {
+
+		section_data data(sec[s]);
+	}
+}
+
