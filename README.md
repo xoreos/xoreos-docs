@@ -32,3 +32,4 @@ structure of binary files.
 * JadeMDL.bt: Jade Empire's MDL model file
 * NWN1MDL.bt: Neverwinter Nights' MDL model file
 * NWN2MDB.bt: Neverwinter Nights 2's MDB/TRN/TRX model file
+* NWN2GR2.bt: Neverwinter Nights 2's Granny2 animation file
