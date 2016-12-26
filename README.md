@@ -33,3 +33,7 @@ structure of binary files.
 * NWN1MDL.bt: Neverwinter Nights' MDL model file
 * NWN2MDB.bt: Neverwinter Nights 2's MDB/TRN/TRX model file
 * NWN2GR2.bt: Neverwinter Nights 2's Granny2 animation file
+
+These template files are released under the terms of the CC0 1.0 Universal
+Public Domain Dedication. For details, see the file COPYING in the templates
+directory, or <https://creativecommons.org/publicdomain/zero/1.0/>.
