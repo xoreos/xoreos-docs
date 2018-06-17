@@ -16,6 +16,8 @@ official and as figured out by the modding community.
   nwn.bioware.com site
 * torlack: Tim Smith (Torlack)'s notes of several formats, from his
   now defunct website
+* trn: Specs for the NWN2 terrain and walkmesh format
+* foxpro: Specs for the FoxPro database format
 * gmax\_nwn\_mdl\_0.3b.ms: GMax import script for NWN models, by
   Wayland Reid
 * kotor\_mdl.html: Partial KotOR model specs
